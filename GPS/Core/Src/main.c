@@ -43,6 +43,9 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+#define USART1_ADDR = 0x40013800;
+#define USART1_CR1_ADDR = 0x0;
+
 
 /* USER CODE END PV */
 
@@ -91,13 +94,17 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  //reset the uart state
+  USART_CR1_RXNEIE = 1;
+  //set the word length
+  USART_CR1_M = 0x00;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  printf();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
