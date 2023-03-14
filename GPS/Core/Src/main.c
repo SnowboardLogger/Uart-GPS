@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdio.h"
+#include "stm32l4xx_hal_uart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,8 +44,12 @@ UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-#define USART1_ADDR = 0x40013800;
-#define USART1_CR1_ADDR = 0x0;
+#define USART1_ADDR = 0x40013800
+#define USART1_CR1_OFFSET = 0x0
+#define USART1_BRR _OFFSET = 0xC
+#define USART1_CR2_OFFSET = 0x4
+#define USART1_CR3_OFFSET = 0x8
+
 
 
 /* USER CODE END PV */
@@ -94,17 +99,18 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  //reset the uart state
-  USART_CR1_RXNEIE = 1;
-  //set the word length
-  USART_CR1_M = 0x00;
+
+  uint8_t * dataBuffer = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  printf();
+	//The last parameter is the number of data elements to be received, this will need to be changed based on the max # bytes the GPS sends
+	HAL_UART_Receive_IT(&huart1, dataBuffer, 4);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -266,7 +272,7 @@ static void MX_GPIO_Init(void)
 #endif /* __GNUC__ */
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, 0xFFFF);
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
   return ch;
 }
 
