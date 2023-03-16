@@ -60,7 +60,6 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,9 +98,13 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  //enable GGA (contains the precision data) and RMC (contains all the minimum navigation info)
+  //data on the GPS
+  char * inputBuffer = "PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0";
+  HAL_UART_Transmit(&huart1, (uint8_t *) inputBuffer, sizeof(inputBuffer), 100);
 
   uint8_t * dataBuffer = 0;
-
+  const int MAXGPSBYTES = 50;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -109,7 +112,17 @@ int main(void)
   while (1)
   {
 	//The last parameter is the number of data elements to be received, this will need to be changed based on the max # bytes the GPS sends
-	HAL_UART_Receive_IT(&huart1, dataBuffer, 4);
+	//The number of bytes can change based on whether the GPS has a fix or not so that's a problem
+	HAL_UART_Receive_IT(&huart1, dataBuffer, MAXGPSBYTES);
+	//huart->RxISR(huart); might hold some data?
+	for(int i = 0; i < MAXGPSBYTES; ++i){
+		//convert the dataBuffer from binary to a char
+		char c = strtol(dataBuffer + i, 0, 2);
+		printf("%c", c);
+
+	}
+	printf("\n");
+
 
     /* USER CODE END WHILE */
 
