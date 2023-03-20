@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdlib.h"
 #include "stdio.h"
 #include "stm32l4xx_hal_uart.h"
 /* USER CODE END Includes */
@@ -101,10 +102,10 @@ int main(void)
   //enable GGA (contains the precision data) and RMC (contains all the minimum navigation info)
   //data on the GPS
   char * inputBuffer = "PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0";
-  HAL_UART_Transmit(&huart1, (uint8_t *) inputBuffer, sizeof(inputBuffer), 100);
+  HAL_UART_Transmit(&huart2, (uint8_t *) inputBuffer, sizeof(inputBuffer), 100);
 
-  uint8_t * dataBuffer = 0;
-  const int MAXGPSBYTES = 50;
+  char dataBuffer[5];
+  const uint8_t MAXGPSBYTES = 50;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,12 +114,17 @@ int main(void)
   {
 	//The last parameter is the number of data elements to be received, this will need to be changed based on the max # bytes the GPS sends
 	//The number of bytes can change based on whether the GPS has a fix or not so that's a problem
-	HAL_UART_Receive_IT(&huart1, dataBuffer, MAXGPSBYTES);
+	//printf("test:2,23,32,4,23,4,423,43");
+
+	HAL_UART_Receive(&huart2, (uint8_t *) dataBuffer, 5, 10000);
 	//huart->RxISR(huart); might hold some data?
-	for(int i = 0; i < MAXGPSBYTES; ++i){
+	if(*dataBuffer!=0){
+		printf("received");
+	}
+	printf("data:");
+	for(uint8_t i = 0; i < 4; ++i){
 		//convert the dataBuffer from binary to a char
-		char c = strtol(dataBuffer + i, 0, 2);
-		printf("%c", c);
+		printf("%c", *(dataBuffer+i));
 
 	}
 	printf("\n");
@@ -232,7 +238,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
+  huart2.Init.BaudRate = 9600;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -285,7 +291,7 @@ static void MX_GPIO_Init(void)
 #endif /* __GNUC__ */
 PUTCHAR_PROTOTYPE
 {
-  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
   return ch;
 }
 
