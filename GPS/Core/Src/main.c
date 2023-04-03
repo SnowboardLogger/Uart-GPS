@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "stdlib.h"
 #include "stdio.h"
+#include <string.h>
 #include "stm32l4xx_hal_uart.h"
 /* USER CODE END Includes */
 
@@ -50,6 +51,8 @@ UART_HandleTypeDef huart2;
 #define USART1_BRR _OFFSET = 0xC
 #define USART1_CR2_OFFSET = 0x4
 #define USART1_CR3_OFFSET = 0x8
+
+volatile char rxBuffer[70] = "";
 
 
 
@@ -101,11 +104,38 @@ int main(void)
   /* USER CODE BEGIN 2 */
   //enable GGA (contains the precision data) and RMC (contains all the minimum navigation info)
   //data on the GPS
-  char * inputBuffer = "PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0";
-  HAL_UART_Transmit(&huart2, (uint8_t *) inputBuffer, sizeof(inputBuffer), 100);
+  char inputBuffer[] = "PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0";
+  HAL_UART_Transmit(&huart1, (uint8_t *) inputBuffer, sizeof(inputBuffer), 100);
 
-  char dataBuffer[5];
-  const uint8_t MAXGPSBYTES = 50;
+  char dataBuffer[70]="ASDFADFHDFGASDFASDFSDFHDASDF";//max chars of 70 from gpgga
+  int dataElementNum = 0;
+
+  char dataType[] = "XXXXXX";
+
+  char latitudeChar[] = "lllll.ll";
+  double latitude = 0;
+
+  char latDir = 'A';//N or S
+
+  char longitudeChar[] = "yyyyy.yy";
+  double longitude = 0;
+
+  char longDir = 'A';//E or W
+
+  uint8_t fix = 0;//0 = invalid, 1 = GPS fix, 2 = Dif. GPS fix
+
+  uint8_t numSatellites = 0;
+
+  double hdop = 0;//Horizontal Dilution of Precision
+  char hdopChar[] = "x.x";
+
+  double altitude = 0;
+  char altitudeChar[] = "x.x";
+
+  char altitudeUnits = 'M';//M = meters
+  //they have a checksum, do we need to use it?
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -115,19 +145,150 @@ int main(void)
 	//The last parameter is the number of data elements to be received, this will need to be changed based on the max # bytes the GPS sends
 	//The number of bytes can change based on whether the GPS has a fix or not so that's a problem
 	//printf("test:2,23,32,4,23,4,423,43");
-
-	HAL_UART_Receive(&huart2, (uint8_t *) dataBuffer, 5, 10000);
+	//__HAL_UART_FLUSH_DRREGISTER(&huart1);
+	HAL_UART_Receive(&huart1, (uint8_t *) dataBuffer, 68, 10000);
 	//huart->RxISR(huart); might hold some data?
-	if(*dataBuffer!=0){
-		printf("received");
-	}
-	printf("data:");
-	for(uint8_t i = 0; i < 4; ++i){
-		//convert the dataBuffer from binary to a char
-		printf("%c", *(dataBuffer+i));
+
+	int index = 0;
+
+	for(uint8_t i = 0; i < 70; ++i){
+		char letter = *(dataBuffer+i);
+
+		//printf("%c", letter);
+
+
+		if(letter == ','){
+			++dataElementNum;
+			index = 0;
+		}
+
+		if(dataElementNum == 0 && letter != ','){
+			//datatype, either GPGGA or GPRMC
+			dataType[index] = letter;
+			++index;
+		}
+
+
+		if(strcmp(dataType,"$GPGGA") == 0 && letter != ','){
+			if (dataElementNum == 1 ){
+				//This is the UTC (time) if we need it
+			} else if (dataElementNum == 2 ){
+				latitudeChar[index] = letter;
+				++index;
+				if(*(dataBuffer+i+1) == ','){
+					latitude = atof(latitudeChar);
+				}
+
+			} else if (dataElementNum == 3){
+				latDir = letter;
+
+			} else if (dataElementNum == 4){
+				longitudeChar[index] = letter;
+				++index;
+				if(*(dataBuffer+i+1) == ','){
+					longitude = atof(longitudeChar);
+				}
+
+			} else if (dataElementNum == 5){
+				longDir = letter;
+
+			} else if (dataElementNum == 6){
+				fix = (uint8_t) letter;
+
+			} else if (dataElementNum == 7){
+				//sus?
+				numSatellites = (uint8_t) letter;
+
+			} else if (dataElementNum == 8){
+				hdopChar[index] = letter;
+				++index;
+				if(*(dataBuffer+i+1) == ','){
+					hdop = atof(hdopChar);
+				}
+
+			} else if (dataElementNum == 9){
+				altitudeChar[index] = letter;
+				++index;
+				if(*(dataBuffer+i+1) == ','){
+					altitude = atof(altitudeChar);
+				}
+
+			} else if (dataElementNum == 10){
+				altitudeUnits = letter;
+
+			} else if (dataElementNum == 11){
+				break;
+			}
+
+		} else if(strcmp(dataType,"$GPRMC") == 0 ){
+			if (dataElementNum == 1 ){
+
+			} else if (dataElementNum == 2){
+
+			} else if (dataElementNum == 3){
+
+			} else if (dataElementNum == 4){
+
+			} else if (dataElementNum == 5){
+
+			} else if (dataElementNum == 6){
+
+			} else if (dataElementNum == 7){
+
+			} else if (dataElementNum == 8){
+
+			} else if (dataElementNum == 9){
+
+			} else if (dataElementNum == 10){
+
+			} else if (dataElementNum == 11){
+
+			} else if (dataElementNum == 12){
+
+			} else if (dataElementNum == 13){
+
+			} else if (dataElementNum == 14){
+
+			} else if (dataElementNum == 15){
+
+			}
+		}
+
+
+
 
 	}
+	/*
+	 * char latDir = "";//N or S
+
+  char longitudeChar[] = "";
+  double longitude = 0;
+
+  char longDir = "";//E or W
+
+  uint8_t fix = 0;//0 = invalid, 1 = GPS fix, 2 = Dif. GPS fix
+
+  uint8_t numSatellites = 0;
+
+  double hdop = 0;//Horizontal Dilution of Precision
+  char hdopChar[] = "";
+
+  double altitude = 0;
+  char altitudeChar[] = "";
+
+  char altitudeUnits = 'M';//M = meters*/
+	printf("Latitude: %f", latitude);
+	printf(" %c", latDir);
+	printf(" | Longitude: %f", longitude);
+	printf(" %c", longDir);
+	printf(" | GPS fix?: %u", fix);
+	printf(" | Satellites: %u", numSatellites);
+	printf(" | HDOP: %f", hdop);
+	printf(" | altitude: %f", altitude);
+	printf(" %c", altitudeUnits);
 	printf("\n");
+
+
 
 
     /* USER CODE END WHILE */
